@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Alushi's Quantum Lab</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: black;
+    overflow: hidden;
+    font-family: monospace;
+  }
+
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  #matrix { z-index: 0; }
+  #atom { z-index: 1; pointer-events: none; }
+
+#title {
+  position: absolute;
+  top: 20px;
+  left: 30px;              /* Keeps it anchored nicely to the left */
+  width: 25%;              /* Restricts to first quarter of screen */
+  font-size: 1.6em;
+  font-family: 'Orbitron', monospace;
+  color: #00ffff;
+  letter-spacing: 2px;
+  line-height: 1.3em;
+  text-shadow:
+    0 0 5px #00ffff,
+    0 0 10px #00ffff,
+    0 0 20px #00b3ff,
+    0 0 40px #0088ff;
+  animation: titlePulse 3s infinite ease-in-out;
+  z-index: 20;
+  text-align: left;         /* Keeps text aligned left */
+  white-space: normal;      /* Allows wrapping inside 25% width */
+}
+
+@keyframes titlePulse {
+  0%, 100% { text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 20px #00b3ff; }
+  50% { text-shadow: 0 0 15px #00ffff, 0 0 30px #00ccff, 0 0 60px #0088ff; }
+}
+
+
+
+
+
+  #topControls, #bottomControls {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    max-width: 90%;
+  }
+
+  #topControls { top: 60px; }
+  #bottomControls { bottom: 30px; }
+
+  button {
+    background: rgba(0, 255, 180, 0.1);
+    border: 1px solid #0ff;
+    color: #0ff;
+    font-size: 1em;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-shadow: 0 0 6px #0ff;
+    transition: all 0.3s;
+  }
+
+  button.active {
+    background: rgba(0, 255, 180, 0.4);
+    box-shadow: 0 0 15px #0ff;
+    transform: scale(1.05);
+  }
+
+  #infoContainer {
+    position: absolute;
+    right: 20px;
+    top: 140px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-end;
+    z-index: 15;
+  }
+
+  .info-box {
+    width: 300px;
+    background: rgba(0, 30, 60, 0.9);
+    border: 1px solid #0ff;
+    border-radius: 10px;
+    padding: 15px;
+    color: #0ff;
+    font-size: 0.9em;
+    box-shadow: 0 0 20px #0ff4;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.5s ease;
+  }
+
+  .info-box.active { opacity: 1; transform: translateX(0); }
+
+  .info-title { font-weight: bold; color: #00eaff; margin-bottom: 5px; }
+
+  #popupContainer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .popup {
+    background: rgba(0, 20, 40, 0.95);
+    border: 1px solid #0ff;
+    border-radius: 15px;
+    padding: 25px 35px;
+    width: 420px;
+    max-width: 90%;
+    color: #0ff;
+    font-size: 1em;
+    box-shadow: 0 0 25px #0ff8;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.5s ease;
+    text-align: center;
+  }
+
+  .popup.active { opacity: 1; transform: scale(1); }
+
+  .popup h2 {
+    color: #00eaff;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.3em;
+    text-shadow: 0 0 10px #0ff;
+  }
+
+  .popup p { color: #aaf; }
+
+  .close-btn {
+    margin-top: 15px;
+    background: none;
+    border: 1px solid #0ff;
+    color: #0ff;
+    padding: 5px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+  }
+
+  #tryIt {
+  position: absolute;
+  bottom: 85px; /* Just above bottomControls */
+  left: 50%;
+  transform: translateX(-50%);
+  color: #0ff;
+  font-size: 1.5em;
+  text-shadow: 0 0 10px #0ff;
+  letter-spacing: 1px;
+  z-index: 10;
+  animation: glowPulse 2s infinite ease-in-out;
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.6; text-shadow: 0 0 6px #0ff; }
+  50% { opacity: 1; text-shadow: 0 0 18px #00ffff; }
+}
+
+#learnChange {
+  position: absolute;
+  top: 15px; /* just under the main title */
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ff8080;
+  font-size: 1.5em;
+  text-shadow: 0 0 10px #ff4040;
+  letter-spacing: 1px;
+  z-index: 10;
+  animation: glowPulseRed 2s infinite ease-in-out;
+}
+
+@keyframes glowPulseRed {
+  0%, 100% { opacity: 0.6; text-shadow: 0 0 6px #ff4040; }
+  50% { opacity: 1; text-shadow: 0 0 18px #ff8080; }
+}
+
+
+
+  .close-btn:hover { background: rgba(0,255,255,0.2); }
+</style>
+</head>
+<body>
+<div id="title">Welcome to Alushi's Quantum Interaction Lab</div>
+<div id="learnChange">✨ Learn about my change ↓</div>
+
+<canvas id="matrix"></canvas>
+<canvas id="atom"></canvas>
+
+<div id="topControls">
+  <button id="btnGoodbye">👋 Goodbye from Alushi</button>
+  <button id="btnWhere">🚀 Where Alushi is Going</button>
+  <button id="btnQuantum">💡 What is Quantum Control?</button>
+  <button id="btnInterf">⚛️ Atom Interferometry</button>
+  <button id="btnToolbox">🧰 Alushi’s Toolbox</button>
+</div>
+
+<div id="tryIt">💫 Have a go for yourself ↓</div>
+
+
+<div id="bottomControls">
+  <button id="btnLaser">🔦 Fire Lasers</button>
+  <button id="btnSplit">⚛️ Split Atom</button>
+  <button id="btnSuper">🌌 Superposition</button>
+  <button id="btnInterfere">🌊 Interference</button>
+  <button id="btnReset">🔄 Reset</button>
+</div>
+
+<div id="infoContainer">
+  <div id="infoLaser" class="info-box"><div class="info-title">Laser Cooling</div><div>Lasers slow atoms to near absolute zero, creating ultra-stable atomic states for precise quantum measurements.</div></div>
+  <div id="infoSplit" class="info-box"><div class="info-title">Atom Splitting</div><div>The atom’s wavefunction splits into two light-driven paths. This forms the core of quantum interferometry.</div></div>
+  <div id="infoSuper" class="info-box"><div class="info-title">Quantum Superposition</div><div>Atoms exist in multiple states simultaneously — the foundation of quantum computing and high-precision sensing.</div></div>
+  <div id="infoInterfere" class="info-box"><div class="info-title">Interference Pattern</div><div>When superposed states recombine, interference fringes reveal gravity, acceleration, or magnetic effects with astonishing sensitivity.</div></div>
+</div>
+
+<div id="popupContainer"></div>
+
+<script>
+// === MATRIX ===
+const matrix = document.getElementById("matrix");
+const mctx = matrix.getContext("2d");
+let fontSize = 14, cols, drops, streams;
+function initMatrix() {
+  matrix.width = window.innerWidth;
+  matrix.height = window.innerHeight;
+  cols = Math.floor(matrix.width / fontSize);
+  drops = Array(cols).fill(0);
+  streams = Array(cols).fill().map(() => (Math.random() < 0.5 ? "0" : "1"));
+}
+function drawMatrix() {
+  mctx.fillStyle = "rgba(0,0,0,0.15)";
+  mctx.fillRect(0, 0, matrix.width, matrix.height);
+  mctx.font = fontSize + "px monospace";
+  for (let i = 0; i < cols; i++) {
+    if (Math.random() > 0.9) continue;
+    const text = streams[i];
+    const opacity = 0.1 + Math.random() * 0.25;
+    mctx.fillStyle = `rgba(0,255,120,${opacity})`;
+    mctx.fillText(text, i * fontSize, drops[i] * fontSize);
+    if (Math.random() > 0.996) streams[i] = (streams[i] === "0") ? "1" : "0";
+    if (drops[i] * fontSize > matrix.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i] += 0.15;
+  }
+  requestAnimationFrame(drawMatrix);
+}
+initMatrix();
+requestAnimationFrame(drawMatrix);
+
+// === ATOM VISUAL ===
+const atom = document.getElementById("atom");
+const actx = atom.getContext("2d", { alpha: true });
+atom.width = window.innerWidth;
+atom.height = window.innerHeight;
+let t = 0, laserBoost = 1.0, splitDist = 0, showInterference = false, superposition = false, superTime = 0;
+
+function drawAtom() {
+  actx.clearRect(0, 0, atom.width, atom.height);
+  const cx = atom.width / 2, cy = atom.height / 2;
+  actx.globalCompositeOperation = "lighter";
+  const nucleusGradient = actx.createRadialGradient(cx, cy, 0, cx, cy, 180);
+  nucleusGradient.addColorStop(0, "rgba(255,100,100,0.9)");
+  nucleusGradient.addColorStop(0.3, "rgba(255,150,255,0.4)");
+  nucleusGradient.addColorStop(1, "rgba(0,0,0,0)");
+  actx.fillStyle = nucleusGradient;
+  actx.beginPath(); actx.arc(cx, cy, 200, 0, Math.PI * 2); actx.fill();
+  for (let i = 1; i <= 5; i++) {
+    const r = i * 60;
+    const alpha = 0.15 + 0.05 * Math.sin(t * 0.02 + i);
+    actx.strokeStyle = `rgba(80,180,255,${alpha})`;
+    actx.beginPath(); actx.arc(cx, cy, r, 0, Math.PI * 2); actx.stroke();
+  }
+  if (laserBoost > 1.0) {
+    for (let i = 0; i < 3; i++) {
+      const angle = i * (Math.PI / 3);
+      const pulse = (0.5 + 0.5 * Math.sin(t * 0.05 + i * 2)) * laserBoost;
+      const beamWidth = 6 + 3 * pulse;
+      const grad = actx.createLinearGradient(
+        cx - 2000 * Math.cos(angle), cy - 2000 * Math.sin(angle),
+        cx + 2000 * Math.cos(angle), cy + 2000 * Math.sin(angle)
+      );
+      grad.addColorStop(0, "rgba(0,0,0,0)");
+      grad.addColorStop(0.5, `rgba(120,220,255,${0.8 * pulse})`);
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      actx.fillStyle = grad;
+      actx.save(); actx.translate(cx, cy); actx.rotate(angle);
+      actx.fillRect(-2000, -beamWidth / 2, 4000, beamWidth);
+      actx.restore();
+    }
+  }
+  if (splitDist > 0) {
+    const dist = Math.sin(t * 0.01) * 200 * splitDist;
+    for (let dir of [-1, 1]) {
+      const offset = dir * dist;
+      const grad = actx.createRadialGradient(cx + offset, cy, 0, cx + offset, cy, 100);
+      grad.addColorStop(0, "rgba(100,220,255,0.4)");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      actx.fillStyle = grad;
+      actx.beginPath();
+      actx.arc(cx + offset, cy, 100, 0, Math.PI * 2);
+      actx.fill();
+    }
+  }
+  if (showInterference) {
+    for (let i = -80; i <= 80; i++) {
+      const offset = i * 3;
+      const intensity = 0.7 + 0.3 * Math.cos(i * 0.2 + t * 0.1);
+      actx.strokeStyle = `rgba(120,240,255,${intensity * 0.4})`;
+      actx.beginPath();
+      actx.moveTo(cx - 260, cy + offset);
+      actx.lineTo(cx + 260, cy + offset);
+      actx.stroke();
+    }
+  }
+  if (superposition) {
+    superTime += 0.02;
+    for (let i = 0; i < 1500; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 200 + Math.sin(superTime + i) * 80;
+      const x = cx + Math.cos(angle) * radius;
+      const y = cy + Math.sin(angle) * radius;
+      const alpha = 0.1 + 0.1 * Math.sin(superTime * 3 + i);
+      const colorPhase = Math.sin(superTime + i / 50);
+      const r = 100 + Math.floor(100 * (1 + colorPhase));
+      const g = 150 + Math.floor(80 * (1 - colorPhase));
+      const b = 255;
+      actx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+      actx.fillRect(x, y, 2, 2);
+    }
+  } else superTime = 0;
+  t++;
+  requestAnimationFrame(drawAtom);
+}
+requestAnimationFrame(drawAtom);
+
+// === STATES ===
+const laserState = { value: 1.0 }, splitState = { value: 0 }, superState = { value: false }, interfereState = { value: false };
+function toggleEffect(button, infoBox, stateVar, on, off) {
+  stateVar.value = stateVar.value === on ? off : on;
+  button.classList.toggle("active");
+  infoBox.classList.toggle("active");
+}
+btnLaser.onclick = () => toggleEffect(btnLaser, infoLaser, laserState, 2.5, 1.0);
+btnSplit.onclick = () => toggleEffect(btnSplit, infoSplit, splitState, 1.0, 0);
+btnSuper.onclick = () => toggleEffect(btnSuper, infoSuper, superState, true, false);
+btnInterfere.onclick = () => toggleEffect(btnInterfere, infoInterfere, interfereState, true, false);
+btnReset.onclick = () => {
+  document.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".info-box").forEach(i => i.classList.remove("active"));
+  laserState.value = 1.0; splitState.value = 0; superState.value = false; interfereState.value = false;
+  laserBoost = 1.0; splitDist = 0; superposition = false; showInterference = false;
+};
+function updateStates() {
+  laserBoost = laserState.value; splitDist = splitState.value;
+  superposition = superState.value; showInterference = interfereState.value;
+  requestAnimationFrame(updateStates);
+}
+updateStates();
+
+// === POPUPS ===
+const popupContainer = document.getElementById("popupContainer");
+function showPopup(title, text) {
+  popupContainer.innerHTML = `<div class="popup active"><h2>${title}</h2><p>${text}</p><button class="close-btn">Close</button></div>`;
+  popupContainer.querySelector(".close-btn").onclick = () => popupContainer.innerHTML = "";
+}
+btnGoodbye.onclick = () => showPopup(
+  "Goodbye from Alushi",
+  "Thank you for visiting my Quantum Interaction Lab. It has been a pleasure working with many of you over the years. " +
+  "Messing about with industrial controls, automation systems, PLCs, IRBs, and manufacturing processes has been great fun — and an incredible learning journey. I am truly grateful to all those who have shared their experience and support over the years. " + 
+  "But now, the next chapter begins, so I shall leave manufacturing so that I can work within engineering."
+);
+btnWhere.onclick = () => showPopup(
+  "Where Alushi is Going",
+  "Alushi is heading into the heart of the UK’s quantum revolution — joining the UK Quantum Technology Hub in Sensing, Imaging and Timing (QuSIT) with the University of Birmingham. " +
+  "There, the focus is on translating quantum science into engineered systems that can measure gravity, acceleration, and time with unprecedented precision. " +
+  "The work contributes directly to next-generation quantum gravimeters and navigation systems — sensors capable of detecting underground structures, geological layers, and gravitational anomalies invisible to conventional instruments. " +
+  "This environment combines academic research with industrial collaboration, bringing together physicists, electronics engineers, and photonics experts to make quantum sensing practical, reliable, and field-ready. " +
+  "It’s not just about understanding quantum behaviour — it’s about building the control systems, electronics, and optical platforms that make it usable in the real world. "+
+  "Alushi's job is no longer to use technology, but to invent it, wish him luck !."
+);
+
+btnQuantum.onclick = () => showPopup("What is Quantum Control?", "Quantum control is about shaping the behaviour of atoms, ions, or photons with precisely timed electromagnetic fields — such as laser light, radiofrequency, or microwave pulses — so the system follows a desired path, like teaching a robot to move perfectly, but at nanosecond precision. It matters because better control means cleaner quantum states, which leads to higher sensitivity in quantum sensors and greater fidelity in quantum computing or communication systems. In sensing, that translates to measurable improvements in detecting gravity, acceleration, rotation, and magnetic or electric fields. The process works by preparing a quantum state, driving it with a sequence of pulses to split, redirect, and recombine matter waves, then sensing the phase difference that encodes environmental effects before reading out and applying feedback. For a control systems engineer, this is a system defined by extreme precision and high uncertainty — a world where every nanosecond, every pulse shape, and every phase offset matters."); 
+btnInterf.onclick = () => showPopup("Atom Interferometry", "Atom interferometry uses the wave nature of atoms to measure physical quantities like gravity, acceleration, and rotation with extraordinary precision. Instead of light waves, we use matter waves, splitting and recombining them with laser pulses that act as beam splitters and mirrors. As the atom’s two wave packets travel along separate paths, any external influence — such as gravity or motion — imprints a phase shift between them. When the two paths recombine, this phase difference creates an interference pattern that directly encodes the quantity we want to measure. The sensitivity of an atom interferometer scales with the laser wavelength, the time between pulses, and the control stability of the system. Even tiny vibrations, timing errors, or phase drifts can destroy contrast and precision. For a control systems engineer, atom interferometry is a highly dynamic system where laser timing, detuning, and phase locking must work together flawlessly. Each pulse sequence is a tightly choreographed experiment in which the control electronics determine whether you can read the universe’s subtlest forces or lose them to noise.");
+btnToolbox.onclick = () => showPopup(
+  "Alushi’s Toolbox",
+  "This is applied research — bridging theory and implementation through electronics, precision control, and system integration. " +
+  "I am tasked with developing the full control stack for a next-generation laser delivery system, covering simulation, hardware design, and experimental validation. " +
+  "That means designing high-frequency analog circuits, low-noise power electronics, and precision feedback systems that maintain laser stability at the quantum limit. " +
+  "Custom PCBs are designed, manufactured, and assembled in-house, supporting laser drivers, current regulators, temperature controllers, and high-speed modulation stages. " +
+  "Embedded microcontrollers and FPGAs handle real-time timing control, signal processing, and synchronization of optical pulses with sub-nanosecond precision. " +
+  "Lab experiments validate each stage, from component-level characterization to full system response under controlled conditions. " +
+  "Mechanical design and fabrication use CNC machining, FDM, resin, and powder 3D printing to build compact optical and electronic housings. " +
+  "Every iteration is measured, tuned, and optimized — fusing photonics, control theory, and hardware engineering into one coherent system. " +
+  "In essence, this work turns quantum sensing from delicate lab equipment into robust, engineered technology fit for the real world."
+);
+window.addEventListener("resize", () => { initMatrix(); atom.width = window.innerWidth; atom.height = window.innerHeight; });
+</script>
+</body>
+</html>
