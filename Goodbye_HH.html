@@ -306,6 +306,85 @@
   @media (max-width: 600px){
     #infoContainer{ display:none; }
   }
+
+  /* ===== LEFT VIDEO PANE ===== */
+#videoPane{
+  position: fixed;
+  left: calc(20px + var(--safe-left));
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 16;                /* above canvases & info boxes, below popups (z=20) */
+  width: clamp(240px, 22vw, 360px);
+  aspect-ratio: 3 / 4;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(0, 25, 45, 0.75);
+  border: 1px solid #00ffff80;
+  box-shadow: 0 0 25px #00ffff30;
+  backdrop-filter: blur(6px);
+}
+
+#videoPane .qvid{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  outline: 1px solid #0ff3;
+  box-shadow: 0 0 10px #00ffff20;
+  transition: transform 0.2s ease, box-shadow 0.3s ease, outline-color 0.2s ease;
+  pointer-events: auto;
+}
+
+#videoPane .qvid:hover{
+  transform: scale(1.02);
+  box-shadow: 0 0 16px #00ffff60;
+  outline-color: #0ff;
+}
+
+/* Small screens: optional tweaks/hide */
+@media (max-width: 700px){
+  #videoPane{
+    width: clamp(220px, 42vw, 280px);
+    gap: 6px;
+  }
+}
+@media (max-width: 540px){
+  #videoPane{ display: none; }
+}
+
+
+
+/* ===== AI disclaimer text ===== */
+#videoDisclaimer{
+  position: fixed;
+  left: calc(20px + var(--safe-left));
+  top: calc(50% + 230px); /* adjust vertically to sit just below the pane */
+  transform: translateY(-50%);
+  z-index: 17;
+  color: #00ffff;
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(0.75rem, 0.9vw + 0.6rem, 0.95rem);
+  opacity: 0.8;
+  text-shadow: 0 0 6px #00ffff80;
+  background: rgba(0, 25, 45, 0.7);
+  border: 1px solid rgba(0,255,255,0.3);
+  border-radius: 8px;
+  padding: 6px 10px;
+  backdrop-filter: blur(5px);
+}
+
+/* On small screens, tuck it away */
+@media (max-width: 540px){
+  #videoDisclaimer{ display:none; }
+}
+
+
+
+
 </style>
 </head>
 <body>
@@ -314,6 +393,16 @@
 
   <canvas id="matrix"></canvas>
   <canvas id="atom"></canvas>
+
+<!-- LEFT VIDEO PANE -->
+<div id="videoPane" aria-label="Quantum video pane">
+  <video class="qvid" src="videos/clip1.mp4" autoplay muted loop playsinline preload="metadata" title="Clip 1"></video>
+  <video class="qvid" src="videos/clip2.mp4" autoplay muted loop playsinline preload="metadata" title="Clip 2"></video>
+  <video class="qvid" src="videos/clip3.mp4" autoplay muted loop playsinline preload="metadata" title="Clip 3"></video>
+  <video class="qvid" src="videos/clip4.mp4" autoplay muted loop playsinline preload="metadata" title="Clip 4"></video>
+</div>
+
+
 
   <!-- Top controls -->
   <div id="topControls">
@@ -375,6 +464,10 @@
       <button id="quizRestart" class="hidden">Restart Quiz</button>
     </div>
   </div>
+
+
+
+
 
 <script>
 /* ===== iOS viewport + DPR canvas helpers ===== */
@@ -643,6 +736,44 @@ document.body.addEventListener("click", () => {
 }, { once: true });
 </script>
 
+
+
+<script>
+/* ===== VIDEO PANE LOGIC ===== */
+(function(){
+  const pane = document.getElementById('videoPane');
+  if(!pane) return;
+
+  const vids = Array.from(pane.querySelectorAll('video.qvid'));
+
+  // Try to start playback politely (muted+playsinline already helps)
+  const tryPlayAll = () => vids.forEach(v => v.play().catch(()=>{}));
+
+  // Reuse the first body click gesture you already rely on for audio
+  document.body.addEventListener('click', tryPlayAll, { once: true });
+
+  // Tap a video to toggle its mute state
+  vids.forEach(v => {
+    v.addEventListener('click', (e) => {
+      e.stopPropagation();
+      v.muted = !v.muted;
+      v.style.outlineColor = v.muted ? '#0ff3' : '#ffbf00';
+      setTimeout(() => { v.style.outlineColor = v.muted ? '#0ff3' : '#0ff'; }, 400);
+    });
+  });
+
+  // Pause when hidden, resume when visible (saves CPU/GPU)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) vids.forEach(v => v.pause());
+    else tryPlayAll();
+  });
+})();
+</script>
+
+
+
+
+
 <script>
 /* ===== QUIZ LOGIC ===== */
 const quizData = [
@@ -819,5 +950,27 @@ quizEls.toggle.onclick = () => {
 
 renderQuiz();
 </script>
+
+
+<!-- LEFT VIDEO PANE -->
+<div id="videoPane" aria-label="Quantum video pane">
+  <video class="qvid" src="videos/clip1.mp4" autoplay muted loop playsinline preload="metadata"></video>
+  <video class="qvid" src="videos/clip2.mp4" autoplay muted loop playsinline preload="metadata"></video>
+  <video class="qvid" src="videos/clip3.mp4" autoplay muted loop playsinline preload="metadata"></video>
+  <video class="qvid" src="videos/clip4.mp4" autoplay muted loop playsinline preload="metadata"></video>
+</div>
+
+<!-- AI disclaimer -->
+<div id="videoDisclaimer">🎞️ Alushi's Lab - Artificial Intelligence Generated</div>
+
+
+
+
+
+
+
+
+
+
 </body>
 </html>
